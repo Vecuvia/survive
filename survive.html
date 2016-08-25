@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Survive</title>
   <link rel="stylesheet" type="text/css" href="../css/style.css">
+  <script type="text/javascript" src="js/zepto.min.js"></script>
   <script type="text/javascript">
   var game = {
     hunger: 100,
     thirst: 100,
     energy: 100,
-    inventory: [
+    carried: [
       {
         "type": "food",
         "name": "some berries",
@@ -18,15 +19,46 @@
         "hunger": 4 
       }
     ],
+    forage: function () {
+      $("main").prepend("<p>Foraging</p>");
+    },
+    craft: function () {
+      $("main").prepend("<p>Crafting</p>");
+    },
+    inventory: function () {
+      var data = "<p><strong>Inventory:</strong></p>";
+      data += "<ul>";
+      for (var i = 0; i < this.carried.length; i++) {
+        var object = this.carried[i];
+        data += "<li>" + object.name + " (";
+        if (object.type === "food") {
+          data += "<a href='#' class='eat " + i +"'>eat</a> - ";
+        }
+        data += "<a href='#' class='junk " + i + "'>junk</a>)</li>";
+      }
+      data += "</ul>";
+      $("main").prepend(data);
+    },
     init: function () {
-
+      var self = this;
+      $("#forage").on("click", function (event) {
+        self.forage();
+      });
+      $("#craft").on("click", function (event) {
+        self.craft();
+      });
+      $("#inventory").on("click", function (event) {
+        self.inventory();
+      });
     }
   };
-  window.onload = game.init();
+  window.onload = function () {
+    game.init();
+  };
   </script>
 </head>
 <body>
-  <main>
+  <header>
     <p class="center">
       <img id="forage" src="img/mushroom.png">
       <img id="craft" src="img/stone-axe.png">
@@ -37,6 +69,8 @@
       <strong>Thirst:</strong> <span id="thirst">100</span> - 
       <strong>Energy:</strong> <span id="energy">100</span>
     </p>
+  </header>
+  <main id="events">
   </main>
   <footer>
     <strong>Survive</strong>
