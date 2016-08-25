@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Survive</title>
+  <link rel="stylesheet" type="text/css" href="../css/style.css">
+  <script type="text/javascript">
+  var game = {
+    hunger: 100,
+    thirst: 100,
+    energy: 100,
+    inventory: [
+      {
+        "type": "food",
+        "name": "some berries",
+        "rots": "24",
+        "hunger": 4 
+      }
+    ],
+    init: function () {
+
+    }
+  };
+  window.onload = game.init();
+  </script>
+</head>
+<body>
+  <main>
+    <p class="center">
+      <img id="forage" src="img/mushroom.png">
+      <img id="craft" src="img/stone-axe.png">
+      <img id="inventory" src="img/bindle.png">
+    </p>
+    <p class="center">
+      <strong>Hunger:</strong> <span id="hunger">100</span> - 
+      <strong>Thirst:</strong> <span id="thirst">100</span> - 
+      <strong>Energy:</strong> <span id="energy">100</span>
+    </p>
+  </main>
+  <footer>
+    <strong>Survive</strong>
+  </footer>
+</body>
+</html>
