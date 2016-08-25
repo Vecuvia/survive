@@ -19,37 +19,54 @@
         "hunger": 4 
       }
     ],
+    views: {
+      "events-view": {
+        init: function () {
+          var self = game;
+          $("#forage").on("click", function (event) {
+            self.forage();
+          });
+          $("#craft").on("click", function (event) {
+            self.craft();
+          });
+          $("#inventory").on("click", function (event) {
+            self.inventory();
+          });
+        },
+        render: function () {
+
+        }
+      },
+      "inventory-view": {
+        init: function () {
+          var self = game;
+          $(".go-back").on("click", function (event) {
+            self.show("events-view");
+          });
+        },
+        render: function () {
+
+        }
+      }
+    },
+    show: function (view) {
+      $(".view").hide();
+      $("#" + view).show();
+    },
     forage: function () {
-      $("main").prepend("<p>Foraging</p>");
+      $("#events").prepend("<p>Foraging</p>");
     },
     craft: function () {
-      $("main").prepend("<p>Crafting</p>");
+      $("#events").prepend("<p>Crafting</p>");
     },
     inventory: function () {
-      var data = "<p><strong>Inventory:</strong></p>";
-      data += "<ul>";
-      for (var i = 0; i < this.carried.length; i++) {
-        var object = this.carried[i];
-        data += "<li>" + object.name + " (";
-        if (object.type === "food") {
-          data += "<a href='#' class='eat " + i +"'>eat</a> - ";
-        }
-        data += "<a href='#' class='junk " + i + "'>junk</a>)</li>";
-      }
-      data += "</ul>";
-      $("main").prepend(data);
+      this.show("inventory-view");
     },
     init: function () {
-      var self = this;
-      $("#forage").on("click", function (event) {
-        self.forage();
-      });
-      $("#craft").on("click", function (event) {
-        self.craft();
-      });
-      $("#inventory").on("click", function (event) {
-        self.inventory();
-      });
+      for (view in this.views) {
+        this.views[view].init();
+      }
+      this.show("events-view");
     }
   };
   window.onload = function () {
@@ -58,19 +75,32 @@
   </script>
 </head>
 <body>
-  <header>
-    <p class="center">
-      <img id="forage" src="img/mushroom.png">
-      <img id="craft" src="img/stone-axe.png">
-      <img id="inventory" src="img/bindle.png">
-    </p>
-    <p class="center">
-      <strong>Hunger:</strong> <span id="hunger">100</span> - 
-      <strong>Thirst:</strong> <span id="thirst">100</span> - 
-      <strong>Energy:</strong> <span id="energy">100</span>
-    </p>
-  </header>
-  <main id="events">
+  <main id="events-view" class="view">
+    <header>
+      <p class="center">
+        <img id="forage" src="img/mushroom.png">
+        <img id="craft" src="img/stone-axe.png">
+        <img id="inventory" src="img/bindle.png">
+      </p>
+      <p class="center">
+        <strong>Hunger:</strong> <span id="hunger">100</span> - 
+        <strong>Thirst:</strong> <span id="thirst">100</span> - 
+        <strong>Energy:</strong> <span id="energy">100</span>
+      </p>
+    </header>
+    <section id="events">
+    </section>
+  </main>
+  <main id="inventory-view" class="view">
+    <header>
+      <div style="text-align: right;">
+        <a class="go-back">Back</a>
+      </div>
+      <h1>Inventory</h1>
+    </header>
+    <ul id="items-list">
+      <!-- Items go here -->
+    </ul>
   </main>
   <footer>
     <strong>Survive</strong>
