@@ -5,12 +5,35 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Survive</title>
   <link rel="stylesheet" type="text/css" href="../css/style.css">
+  <style type="text/css">
+    .bonus {
+      color: green;
+    }
+    .malus {
+      color: red;
+    }
+  </style>
   <script type="text/javascript" src="js/zepto.min.js"></script>
   <script type="text/javascript">
   var game = {
     hunger: 100,
+    hunger_rate: 0.5,
     thirst: 100,
+    thirst_rate: 1.5,
     energy: 100,
+    energy_rate: 12.5,
+    water: 0,
+    creek: false,
+    max_water: function () {
+      var result = 0;
+      for (var i = 0; i < this.carried.length; i++) {
+        var object = this.carried[i];
+        if (object.type == "bottle") {
+          result += object.water;
+        }
+      }
+      return result;
+    },
     carried: [
       {
         "type": "food",
@@ -19,6 +42,13 @@
         "hunger": 4 
       }
     ],
+    skills: {
+      foraging: {
+        lvl: 0,
+        exp: 0
+      }
+    },
+    current_view: "events-view",
     views: {
       "events-view": {
         init: function () {
@@ -32,9 +62,15 @@
           $("#inventory").on("click", function (event) {
             self.inventory();
           });
+          $("#rest").on("click", function (event) {
+            self.rest();
+          });
         },
         render: function () {
-
+          var self = game;
+          $("#hunger").html(self.hunger);
+          $("#thirst").html(self.thirst);
+          $("#energy").html(self.energy);
         }
       },
       "inventory-view": {
@@ -45,16 +81,152 @@
           });
         },
         render: function () {
-
+          var self = game;
+          $("#items-list").html("");
+          for (var i = 0; i < self.carried.length; i++) {
+            var object = self.carried[i];
+            var item = "<li>" + object.name + " (";
+            if (object.type === "food") {
+              item += "<a href='#' onclick='game.eat(" + i + ")'>eat</a> - ";
+            }
+            item += "<a href='#' onclick='game.junk(" + i + ")'>junk</a>";
+            item += ")</li>";
+            $("#items-list").append(item);
+          }
         }
       }
+    },
+    skill: function (what) {
+      var result = this.roll(this.skills[what].lvl);
+      this.skills[what].exp += 1;
+      var next_lvl = Math.pow(10, this.skills[what].lvl + 1);
+      if (this.skills[what].exp > next_lvl) {
+        this.skills[what].exp -= next_lvl;
+        this.skills[what].lvl += 1;
+        $("#events").prepend("<p class='bonus'>You gain a level in " + what + ".</p>");
+      }
+      return result;
+    },
+    roll: function (level) {
+      var comparison = Math.max;
+      var result = 1;
+      if (level <= 0) {
+        level = -level + 2;
+        comparison = Math.min;
+        result = 6;
+      }
+      for (var i = 0; i < level; i++) {
+        var roll = Math.round(Math.random() * 6) + 1;
+        result = comparison(result, roll);
+      }
+      return result;
+    },
+    check_vitals: function () {
+
+    },
+    hour: function () {
+      var i = 0;
+      while (i < this.carried.length) {
+        var object = this.carried[i];
+        if ("rots" in object) {
+          object.rots -= 1;
+          if (object.rots <= 0) {
+            $("#events").prepend("<p>" + object.name + " rots away.</p>");
+            this.carried.splice(i, 1);
+            continue;
+          }
+        }
+        i++;
+      }
+      this.hunger -= this.hunger_rate;
+      this.thirst -= this.thirst_rate;
+      this.check_vitals();
+      this.render();
+    },
+    eat: function (index) {
+      this.show("events-view");
+      $("#events").prepend("<p>You eat " + this.carried[index].name + ". <span class='bonus'>+" + this.carried[index].hunger + " hunger</span></p>");
+      this.hunger += this.carried[index].hunger;
+      if (this.hunger > 100) {
+        this.hunger = 100;
+        $("#events").prepend("<p>You are completely full.</p>");
+      }
+      this.carried.splice(index, 1);
+      this.render();
+    },
+    junk: function (index) {
+      if (confirm("Do you really want to junk " + this.carried[index].name + "?")) {
+        this.carried.splice(index, 1);
+        this.render();
+      }
+    },
+    render: function () {
+      this.views[this.current_view].render();
     },
     show: function (view) {
       $(".view").hide();
       $("#" + view).show();
+      this.current_view = view;
+      this.render();
     },
+    shallow_copy: function (object) {
+      var new_obj = {}
+      for (property in object) {
+        new_obj[property] = object[property];
+      }
+      return new_obj;
+    },
+    forage_results: [
+      {
+        "type": "food",
+        "name": "some berries",
+        "rots": "24",
+        "hunger": 4 
+      },
+      {
+        "type": "food",
+        "name": "a mushroom",
+        "rots": "12",
+        "hunger": 6 
+      }
+    ],
     forage: function () {
-      $("#events").prepend("<p>Foraging</p>");
+      var energy = 10 - this.skills["foraging"].lvl;
+      if (this.energy < energy) {
+        $("#events").prepend("<p>You are too tired to forage.</p>");
+        return;
+      }
+      this.energy -= energy;
+      this.hour();
+      if (this.skill("foraging") >= 4) {
+        var choice = Math.round(Math.random() * this.forage_results.length);
+        console.log(choice);
+        var object = this.shallow_copy(this.forage_results[choice]);
+        this.carried.push(object);
+        $("#events").prepend("<p>You spend an hour foraging, finding " + object.name + " <span class='malus'>-" + energy + " energy</span></p>");
+      } else {
+        $("#events").prepend("<p>You spend an hour foraging, but find nothing. <span class='malus'>-" + energy + " energy<span></p>");
+      }      
+    },
+    rest: function () {
+      var hours = 3 + this.roll(1);
+      var slept = 0;
+      var energy = 0;
+      for (; slept < hours; slept++) {
+        this.energy += this.energy_rate;
+        energy += this.energy_rate;
+        this.hour();
+        if (this.energy > 100) {
+          this.energy = 100;
+          break;
+        }
+      }
+      if (slept > 0) { 
+        $("#events").prepend("<p>You sleep for " + slept + " hours. <span class='bonus'>+" + energy + " energy</span></p>");
+      } else {
+        $("#events").prepend("<p>You can't fall asleep.</p>");
+      }
+      this.render();
     },
     craft: function () {
       $("#events").prepend("<p>Crafting</p>");
@@ -79,6 +251,7 @@
     <header>
       <p class="center">
         <img id="forage" src="img/mushroom.png">
+        <img id="rest" src="img/campfire.png">
         <img id="craft" src="img/stone-axe.png">
         <img id="inventory" src="img/bindle.png">
       </p>
@@ -94,7 +267,7 @@
   <main id="inventory-view" class="view">
     <header>
       <div style="text-align: right;">
-        <a class="go-back">Back</a>
+        <a href="#" class="go-back">Back</a>
       </div>
       <h1>Inventory</h1>
     </header>
