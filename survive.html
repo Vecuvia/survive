@@ -39,7 +39,8 @@
         "type": "food",
         "name": "some berries",
         "rots": "24",
-        "hunger": 4 
+        "hunger": 4,
+        "thirst": 6
       }
     ],
     skills: {
@@ -96,8 +97,16 @@
         }
       }
     },
+    maluses: function () {
+      var malus = 0;
+      if (hunger < 50) malus++;
+      if (hunger < 25) malus++;
+      if (thirst < 50) malus++;
+      if (thirst < 25) malus++;
+      return malus;
+    },
     skill: function (what) {
-      var result = this.roll(this.skills[what].lvl);
+      var result = this.roll(this.skills[what].lvl - this.maluses());
       this.skills[what].exp += 1;
       var next_lvl = Math.pow(10, this.skills[what].lvl + 1);
       if (this.skills[what].exp > next_lvl) {
@@ -122,7 +131,15 @@
       return result;
     },
     check_vitals: function () {
-
+      if (hunger <= 0 || thirst <= 0) {
+        this.show("dead-view");
+        if (hunger <= 0) {
+          $("#reason").html("You starved.");
+        }
+        if (thirst <= 0) {
+          $("#reason").html("You died of thirst.");
+        }
+      }
     },
     hour: function () {
       var i = 0;
@@ -145,11 +162,19 @@
     },
     eat: function (index) {
       this.show("events-view");
-      $("#events").prepend("<p>You eat " + this.carried[index].name + ". <span class='bonus'>+" + this.carried[index].hunger + " hunger</span></p>");
+      var thirst = ""
+      if (this.carried[index].thirst > 0) {
+        thirst = " +" + this.carried[index].thirst + " thirst"
+      }
+      $("#events").prepend("<p>You eat " + this.carried[index].name + ". <span class='bonus'>+" + this.carried[index].hunger + " hunger" + thirst + "</span></p>");
       this.hunger += this.carried[index].hunger;
       if (this.hunger > 100) {
         this.hunger = 100;
         $("#events").prepend("<p>You are completely full.</p>");
+      }
+      this.thirst += this.carried[index].thirst;
+      if (this.thirst > 100) {
+        this.thirst = 100;
       }
       this.carried.splice(index, 1);
       this.render();
@@ -181,13 +206,15 @@
         "type": "food",
         "name": "some berries",
         "rots": "24",
-        "hunger": 4 
+        "hunger": 4,
+        "thirst": 6
       },
       {
         "type": "food",
         "name": "a mushroom",
         "rots": "12",
-        "hunger": 6 
+        "hunger": 6,
+        "thirst": 2
       }
     ],
     forage: function () {
@@ -199,7 +226,7 @@
       this.energy -= energy;
       this.hour();
       if (this.skill("foraging") >= 4) {
-        var choice = Math.round(Math.random() * this.forage_results.length);
+        var choice = Math.round(Math.random() * this.forage_results.length) - 1;
         console.log(choice);
         var object = this.shallow_copy(this.forage_results[choice]);
         this.carried.push(object);
@@ -274,6 +301,9 @@
     <ul id="items-list">
       <!-- Items go here -->
     </ul>
+  </main>
+  <main id="dead-view" class="view">
+    <h1 id="reason">You died.</h1>
   </main>
   <footer>
     <strong>Survive</strong>
