@@ -226,7 +226,7 @@
       this.energy -= energy;
       this.hour();
       if (this.skill("foraging") >= 4) {
-        var choice = Math.round(Math.random() * this.forage_results.length) - 1;
+        var choice = Math.round(Math.random() * this.forage_results.length - 1);
         console.log(choice);
         var object = this.shallow_copy(this.forage_results[choice]);
         this.carried.push(object);
